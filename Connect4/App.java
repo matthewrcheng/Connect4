@@ -1,14 +1,31 @@
 import java.awt.Component;
 import java.awt.EventQueue;
+import java.awt.FlowLayout;
+import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowEvent;
 import java.util.Arrays;
 
+import javax.swing.JButton;
+import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 
 public class App extends JFrame 
 	implements Runnable, MouseListener{
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	static int[] gameState = {0,0,0,0,0,0,0,
 							  0,0,0,0,0,0,0,
 							  0,0,0,0,0,0,0,
@@ -21,12 +38,52 @@ public class App extends JFrame
 	private int baseSize = 100;
 	
 	private Component board;
+	private JPanel menu;
+	private JMenuBar menuBar = new JMenuBar();
 	
 	public App() {
-		initUI();
+		initMenu();
 		
 		//Thread play = new Thread(this);
 		//play.start();
+	}
+	
+	private void initMenu() {
+		// menu = add(new MainMenu());
+		menu = new JPanel();
+		setSize(4*baseSize,4*baseSize);
+		setResizable(false);
+		setTitle("Connect Four");
+		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setLocationRelativeTo(null);
+		
+		JButton playone = new JButton("One Player");
+		JButton playtwo = new JButton("Two Players");
+		ActionListener al2 = new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		        initUI();
+		        closeMenu();
+		    }
+		};
+
+		playtwo.addActionListener(al2);
+		
+		JButton exit = new JButton("Exit");
+		ActionListener ale = new ActionListener() {
+		    @Override
+		    public void actionPerformed(ActionEvent e) {
+		        System.exit(0);
+		    }
+		};
+
+		exit.addActionListener(ale);
+		
+		menu.add(playone);
+		menu.add(playtwo);
+		menu.add(exit);
+		
+		this.getContentPane().add(menu);
 	}
 	
 	private void initUI() {
@@ -37,8 +94,48 @@ public class App extends JFrame
 		setTitle("Connect Four");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
+		setJMenuBar(menuBar);
+		
+		JButton r = new JButton("Reset"); // Create File menu
+		JButton mm = new JButton("Main Menu"); // Create Elements menu
+	    
+	    r.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				System.out.println("reset");
+				reset();
+			}
+	    });
+	    
+	    mm.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				openMenu();
+				reset();
+				Window win = SwingUtilities.getWindowAncestor(board);
+		        if (win != null) {
+		            win.dispose();  // dispose of it
+		        }
+				openMenu();
+			}
+		});
+	    
+	    menuBar.add(r); // Add the file menu
+	    menuBar.add(mm); // Add the element menu
 		
 		addMouseListener(this);
+		
+		
+	}
+	
+	private void closeMenu() {
+		this.remove(menu);
+	}
+	
+	private void openMenu() {
+		this.add(menu);
 	}
 	
 	public static void main(String[] args) {
@@ -67,10 +164,77 @@ public class App extends JFrame
 		}
 		gameState[col+(row*7)] = turn%2 + 1; 
 		board.repaint();
+		// if winner, reset
 		if (checkWin(row,col)) {
 			reset();
+			
+			JDialog jd = new JDialog(this);
+			
+			jd.setSize(200,200);
+			jd.setLocationRelativeTo(null);
+			
+			JLabel jl = new JLabel("Player " + turn%2+1 + " wins!");
+			JButton pa = new JButton("Play Again");
+			JButton mm = new JButton("Main Menu");
+			
+			pa.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					reset();
+				}
+			});
+			mm.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					openMenu();
+					reset();
+					Window win = SwingUtilities.getWindowAncestor(board);
+			        if (win != null) {
+			            win.dispose();  // dispose of it
+			        }
+					openMenu();
+				}
+			});
+			
+			jd.add(jl);
+			jd.add(pa);
+			jd.add(mm);
+			
+			jd.setVisible(true);
 			return;
-		};
+		}
+		// if tie, reset
+		if (turn == 42) { 
+			JDialog jd = new JDialog(this);
+			jd.setLayout(new FlowLayout());
+	        jd.setBounds(500, 300, 400, 300);
+			JLabel jl = new JLabel("It's a tie!");
+			JButton pa = new JButton("Play Again");
+			JButton mm = new JButton("Main Menu");
+			pa.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					reset();
+				}
+			});
+			mm.addActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					reset();
+					Window win = SwingUtilities.getWindowAncestor(board);
+			        if (win != null) {
+			            win.dispose();  // dispose of it
+			        }
+					openMenu();
+				}
+			});
+			jd.add(jl);
+			jd.add(pa);
+			jd.add(mm);
+			jd.setVisible(true);
+			return;
+		}
+		// increment turn
 		turn++;
 	}
 	
@@ -132,8 +296,6 @@ public class App extends JFrame
 			i--;
 			j++;
 		}
-		System.out.println(i);
-		System.out.println(j);
 		while (i < 7 && j >= 0) {
 			if (gameState[7*j + i] == target) {
 				count++;
