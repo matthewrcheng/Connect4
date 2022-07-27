@@ -1,7 +1,11 @@
 import java.awt.EventQueue;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+
 import javax.swing.JFrame;
 
-public class App extends JFrame implements Runnable {
+public class App extends JFrame 
+	implements Runnable, MouseListener{
 	
 	static int[] gameState = {0,0,0,0,0,0,0,
 							  0,0,0,0,0,0,0,
@@ -24,6 +28,8 @@ public class App extends JFrame implements Runnable {
 		setTitle("Connect Four");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
+		
+		addMouseListener(this);
 	}
 	
 	public static void main(String[] args) {
@@ -36,6 +42,36 @@ public class App extends JFrame implements Runnable {
 	
 	@Override
 	public void run() {
+		
+	}
+
+	@Override
+	public void mouseClicked(MouseEvent e) {
+		// TODO Auto-generated method stub
+		System.out.println("clicked!");
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+		// TODO Auto-generated method stub
 		
 	}
 }
