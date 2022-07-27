@@ -56,16 +56,17 @@ public class Board extends JPanel{
 		
 		// draw dividing lines
 		for (int i = 2; i <= w+2; i = i+w/7) {
-			for (int j = 1; j <= h+1; j = j+h/6) {
-				// g2d.setColor(empty);
-				g2d.drawLine(i, 0, i, h);
-				g2d.drawLine(0, j, w, j);
-			}
+			g2d.drawLine(i, 0, i, h);
+		}
+		
+		for (int j = 1; j <= h+1; j = j+h/6) {
+			// g2d.setColor(empty);
+			g2d.drawLine(0, j, w, j);
 		}
 		
 		for (int i = 0; i <= 6; i++) {
 			for (int j = 0; j <= 5; j++) {
-				switch (App.gameState[((i*7)+j)]) {
+				switch (App.gameState[(i+(j*7))]) {
 				case 1:
 					g2d.setColor(color1);
 					break;
@@ -76,7 +77,7 @@ public class Board extends JPanel{
 					g2d.setColor(empty);
 					break;
 				}
-				System.out.println(g2d.getColor());
+				// System.out.println(g2d.getColor());
 				int tempw = 2+(i*(w/7));
 				int temph = 1+(j*(h/6));
 				Ellipse2D e = new Ellipse2D.Double(tempw+10,temph+10,w/7-20,h/6-20);
