@@ -15,6 +15,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -39,7 +40,6 @@ public class App extends JFrame
 	
 	private Component board;
 	private JPanel menu;
-	private JMenuBar menuBar = new JMenuBar();
 	
 	public App() {
 		initMenu();
@@ -94,17 +94,19 @@ public class App extends JFrame
 		setTitle("Connect Four");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
+		
+		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 		
 		JButton r = new JButton("Reset"); // Create File menu
 		JButton mm = new JButton("Main Menu"); // Create Elements menu
+		JButton e = new JButton("Exit");
 	    
 	    r.addActionListener(new ActionListener() {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				// TODO Auto-generated method stub
-				System.out.println("reset");
 				reset();
 			}
 	    });
@@ -112,30 +114,36 @@ public class App extends JFrame
 	    mm.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				openMenu();
 				reset();
-				Window win = SwingUtilities.getWindowAncestor(board);
-		        if (win != null) {
-		            win.dispose();  // dispose of it
-		        }
-				openMenu();
+				remove(board);
+				setJMenuBar(null);
+				initMenu();
 			}
 		});
 	    
+	    e.addActionListener(new ActionListener() {
+	    	@Override
+	    	public void actionPerformed(ActionEvent e) {
+	    		System.exit(0);
+	    	}
+	    });
+	    
 	    menuBar.add(r); // Add the file menu
 	    menuBar.add(mm); // Add the element menu
-		
+		menuBar.add(e);
+	    
 		addMouseListener(this);
 		
 		
 	}
 	
 	private void closeMenu() {
-		this.remove(menu);
+		this.getContentPane().remove(menu);
+		
 	}
 	
 	private void openMenu() {
-		this.add(menu);
+		this.getContentPane().add(menu);
 	}
 	
 	public static void main(String[] args) {
@@ -166,73 +174,92 @@ public class App extends JFrame
 		board.repaint();
 		// if winner, reset
 		if (checkWin(row,col)) {
-			reset();
-			
-			JDialog jd = new JDialog(this);
-			
-			jd.setSize(200,200);
-			jd.setLocationRelativeTo(null);
-			
-			JLabel jl = new JLabel("Player " + turn%2+1 + " wins!");
-			JButton pa = new JButton("Play Again");
-			JButton mm = new JButton("Main Menu");
-			
-			pa.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					reset();
-				}
-			});
-			mm.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					openMenu();
-					reset();
-					Window win = SwingUtilities.getWindowAncestor(board);
-			        if (win != null) {
-			            win.dispose();  // dispose of it
-			        }
-					openMenu();
-				}
-			});
-			
-			jd.add(jl);
-			jd.add(pa);
-			jd.add(mm);
-			
-			jd.setVisible(true);
+			int option = JOptionPane.showConfirmDialog(null,
+					"Play Again?","Player " + turn%2+1 + " wins!", JOptionPane.OK_CANCEL_OPTION);
+			if (option == JOptionPane.OK_OPTION) {
+				reset();
+			} else {
+				reset();
+				remove(board);
+				setJMenuBar(null);
+				initMenu();
+			}
 			return;
+//			reset();
+//			
+//			JDialog jd = new JDialog(this);
+//			
+//			jd.setSize(200,200);
+//			jd.setLocationRelativeTo(null);
+//			
+//			JLabel jl = new JLabel("Player " + turn%2+1 + " wins!");
+//			JButton pa = new JButton("Play Again");
+//			JButton mm = new JButton("Main Menu");
+//			
+//			pa.addActionListener(new ActionListener() {
+//				@Override
+//				public void actionPerformed(ActionEvent e) {
+//					reset();
+//				}
+//			});
+//			mm.addActionListener(new ActionListener() {
+//				@Override
+//				public void actionPerformed(ActionEvent e) {
+//					reset();
+//					remove(board);
+//					setJMenuBar(null);
+//					initMenu();
+//				}
+//			});
+//			
+//			jd.add(jl);
+//			jd.add(pa);
+//			jd.add(mm);
+//			
+//			jd.setVisible(true);
+//			return;
 		}
 		// if tie, reset
-		if (turn == 42) { 
-			JDialog jd = new JDialog(this);
-			jd.setLayout(new FlowLayout());
-	        jd.setBounds(500, 300, 400, 300);
-			JLabel jl = new JLabel("It's a tie!");
-			JButton pa = new JButton("Play Again");
-			JButton mm = new JButton("Main Menu");
-			pa.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					reset();
-				}
-			});
-			mm.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					reset();
-					Window win = SwingUtilities.getWindowAncestor(board);
-			        if (win != null) {
-			            win.dispose();  // dispose of it
-			        }
-					openMenu();
-				}
-			});
-			jd.add(jl);
-			jd.add(pa);
-			jd.add(mm);
-			jd.setVisible(true);
+		if (turn == 41) { 
+			int option = JOptionPane.showConfirmDialog(null,
+					"Play Again?","It's a tie!", JOptionPane.OK_CANCEL_OPTION);
+			if (option == JOptionPane.OK_OPTION) {
+				reset();
+			} else {
+				reset();
+				remove(board);
+				setJMenuBar(null);
+				initMenu();
+			}
 			return;
+//			JDialog jd = new JDialog(this);
+//			jd.setLayout(new FlowLayout());
+//	        jd.setBounds(500, 300, 400, 300);
+//			JLabel jl = new JLabel("It's a tie!");
+//			JButton pa = new JButton("Play Again");
+//			JButton mm = new JButton("Main Menu");
+//			pa.addActionListener(new ActionListener() {
+//				@Override
+//				public void actionPerformed(ActionEvent e) {
+//					reset();
+//				}
+//			});
+//			mm.addActionListener(new ActionListener() {
+//				@Override
+//				public void actionPerformed(ActionEvent e) {
+//					reset();
+//					Window win = SwingUtilities.getWindowAncestor(board);
+//			        if (win != null) {
+//			            win.dispose();  // dispose of it
+//			        }
+//					openMenu();
+//				}
+//			});
+//			jd.add(jl);
+//			jd.add(pa);
+//			jd.add(mm);
+//			jd.setVisible(true);
+//			return;
 		}
 		// increment turn
 		turn++;
