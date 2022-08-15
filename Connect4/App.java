@@ -1,23 +1,17 @@
 import java.awt.Component;
 import java.awt.EventQueue;
-import java.awt.FlowLayout;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-import java.awt.event.WindowEvent;
 import java.util.Arrays;
-
+import java.util.Random;
+import java.lang.Math;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
 
 public class App extends JFrame 
 	implements Runnable, MouseListener{
@@ -41,6 +35,10 @@ public class App extends JFrame
 	private Component board;
 	private JPanel menu;
 	
+	private boolean single = false;
+	
+	private Random rand = new Random();
+	
 	public App() {
 		initMenu();
 		
@@ -58,10 +56,21 @@ public class App extends JFrame
 		setLocationRelativeTo(null);
 		
 		JButton playone = new JButton("One Player");
+		ActionListener al1 = new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				single = true;
+				initUI();
+				closeMenu();
+			}
+		};
+		playone.addActionListener(al1);
+		
 		JButton playtwo = new JButton("Two Players");
 		ActionListener al2 = new ActionListener() {
 		    @Override
 		    public void actionPerformed(ActionEvent e) {
+		    	single = false;
 		        initUI();
 		        closeMenu();
 		    }
@@ -175,7 +184,7 @@ public class App extends JFrame
 		// if winner, reset
 		if (checkWin(row,col)) {
 			int option = JOptionPane.showConfirmDialog(null,
-					"Play Again?","Player " + turn%2+1 + " wins!", JOptionPane.OK_CANCEL_OPTION);
+					"Play Again?","Player " + (turn%2+1) + " wins!", JOptionPane.OK_CANCEL_OPTION);
 			if (option == JOptionPane.OK_OPTION) {
 				reset();
 			} else {
@@ -185,39 +194,6 @@ public class App extends JFrame
 				initMenu();
 			}
 			return;
-//			reset();
-//			
-//			JDialog jd = new JDialog(this);
-//			
-//			jd.setSize(200,200);
-//			jd.setLocationRelativeTo(null);
-//			
-//			JLabel jl = new JLabel("Player " + turn%2+1 + " wins!");
-//			JButton pa = new JButton("Play Again");
-//			JButton mm = new JButton("Main Menu");
-//			
-//			pa.addActionListener(new ActionListener() {
-//				@Override
-//				public void actionPerformed(ActionEvent e) {
-//					reset();
-//				}
-//			});
-//			mm.addActionListener(new ActionListener() {
-//				@Override
-//				public void actionPerformed(ActionEvent e) {
-//					reset();
-//					remove(board);
-//					setJMenuBar(null);
-//					initMenu();
-//				}
-//			});
-//			
-//			jd.add(jl);
-//			jd.add(pa);
-//			jd.add(mm);
-//			
-//			jd.setVisible(true);
-//			return;
 		}
 		// if tie, reset
 		if (turn == 41) { 
@@ -232,37 +208,267 @@ public class App extends JFrame
 				initMenu();
 			}
 			return;
-//			JDialog jd = new JDialog(this);
-//			jd.setLayout(new FlowLayout());
-//	        jd.setBounds(500, 300, 400, 300);
-//			JLabel jl = new JLabel("It's a tie!");
-//			JButton pa = new JButton("Play Again");
-//			JButton mm = new JButton("Main Menu");
-//			pa.addActionListener(new ActionListener() {
-//				@Override
-//				public void actionPerformed(ActionEvent e) {
-//					reset();
-//				}
-//			});
-//			mm.addActionListener(new ActionListener() {
-//				@Override
-//				public void actionPerformed(ActionEvent e) {
-//					reset();
-//					Window win = SwingUtilities.getWindowAncestor(board);
-//			        if (win != null) {
-//			            win.dispose();  // dispose of it
-//			        }
-//					openMenu();
-//				}
-//			});
-//			jd.add(jl);
-//			jd.add(pa);
-//			jd.add(mm);
-//			jd.setVisible(true);
-//			return;
+		}
+		if (single) {
+			int move = computerTurn();
+			// if winner, reset
+			if (checkWin(move/7,move%7)) {
+				int option = JOptionPane.showConfirmDialog(null,
+						"Play Again?","Player " + (turn%2+1) + " wins!", JOptionPane.OK_CANCEL_OPTION);
+				if (option == JOptionPane.OK_OPTION) {
+					reset();
+				} else {
+					reset();
+					remove(board);
+					setJMenuBar(null);
+					initMenu();
+				}
+				return;
+			}
+			// if tie, reset
+			if (turn == 41) { 
+				int option = JOptionPane.showConfirmDialog(null,
+						"Play Again?","It's a tie!", JOptionPane.OK_CANCEL_OPTION);
+				if (option == JOptionPane.OK_OPTION) {
+					reset();
+				} else {
+					reset();
+					remove(board);
+					setJMenuBar(null);
+					initMenu();
+				}
+				return;
+			}
 		}
 		// increment turn
 		turn++;
+	}
+	
+	private SolvingTree generateChildren(SolvingTree root, int[] curState) {
+		for (int col = 0; col<7; col++) {
+			int row = 5;
+			boolean found = true;
+			while (curState[col+(row*7)] != 0) {
+				row--;
+				if (row == -1) {
+					found = false;
+					break;
+				}
+			}
+			if (!found) {
+				continue;
+			}
+			root.addChild(new SolvingTree(col+(row*7)));
+		}
+		return root;
+	}
+	
+	private int evaluate(int player, int index, int[] curState) {
+		int opp = (player == 1) ? 2 : 1;
+		boolean foundOpp = false;
+		int best;
+		// check horizontal
+		int count = 1;
+		for (int i = index-1; i>=(index-(index%7)); i--) {
+			if (curState[i] == player) {
+				count++;
+			} else if (curState[i] == opp && ((index+7-(index%7))-i)<4){
+				foundOpp = true;
+				break;
+			} else {
+				break;
+			}
+		}
+		for (int i = index+1; i<(index+7-(index%7)); i++) {
+			if (curState[i] == player) {
+				count++;
+			} else if (curState[i] == opp && (i-(index-(index%7)))<4){
+				foundOpp = true;
+				break;
+			} else {
+				break;
+			}
+		}
+		if (foundOpp) {
+			count = 0;
+		}
+		best = count;
+		int bests = 1;
+		// check vertical, cannot go higher than current piece
+		count = 1;
+		foundOpp = false;
+		for (int i = index+7; i<42; i+=7) {
+			if (curState[i] == player) {
+				count++;
+			} else if (curState[i] == opp && i<28){
+				foundOpp = true;
+				break;
+			} else {
+				break;
+			}
+		}
+		if (foundOpp) {
+			count = 0;
+		}
+		if (count > best) {
+			best = count;
+		} else if (count == best) {
+			bests++;
+		}
+		// check positive diagonal
+		count = 1;
+		foundOpp = false;
+		int i = index%7-1;
+		int j = index/7+1;
+		while (i >= 0 && j < 6) {
+			if (curState[j*7+i] == player) {
+				count++;
+				i--;
+				j++;
+			} else if (curState[j*7+i] == opp && (i>=3 || j<4)){
+				foundOpp = true;
+				break;
+			} else {
+				break;
+			}
+		}
+		i = index%7+1;
+		j = index/7-1;
+		while (i < 7 && j >= 0) {
+			if (curState[j*7+i] == player) {
+				count++;
+				i++;
+				j--;
+			} else if (curState[j*7+i] == opp && (i<=3 || j>2)){
+				foundOpp = true;
+				break;
+			} else {
+				break;
+			}
+		}
+		if (foundOpp) {
+			count = 0;
+		}
+		if (count > best) {
+			best = count;
+			bests = 1;
+		} else if (count == best) {
+			bests++;
+		}
+		// check negative diagonal
+		count = 1;
+		foundOpp = false;
+		i = index%7-1;
+		j = index/7-1;
+		while (i >= 0 && j >= 0) {
+			if (curState[j*7+i] == player) {
+				count++;
+				i--;
+				j--;
+			} else if (curState[j*7+i] == opp && (i>=3 || j>2)){
+				foundOpp = true;
+				break;
+			} else {
+				break;
+			}
+		}
+		i = index%7+1;
+		j = index/7+1;
+		while (i < 7 && j < 6) {
+			if (curState[j*7+i] == player) {
+				count++;
+				i++;
+				j++;
+			} else if (curState[j*7+i] == opp && (i<=3 || j<4)){
+				foundOpp = true;
+				break;
+			} else {
+				break;
+			}
+		}
+		if (foundOpp) {
+			count = 0;
+		}
+		if (count > best) {
+			best = count;
+			bests = 1;
+		} else if (count == best) {
+			bests++;
+		}
+		switch (best) {
+			case 0:
+				return 0;
+			case 1:
+				return 1*bests;
+			case 2:
+				return 5*bests;
+			case 3:
+				return 10*bests;
+			default:
+				return 10000;
+		}
+	}
+	
+	/*
+	private int[] recursiveDecision(int iteration, int[] tempState) {
+		if (iteration == 1) {
+			int[] subState = tempState.clone();
+			subState[sst.index] = 1;
+			int subscore = evaluate(1, sst.index, subState);
+			if (subscore > bestSub) {
+				count = 1;
+				bestSub = subscore;
+			} else if (subscore == bestSub) {
+				count++;
+			}
+		} else {
+			
+		}
+		int score = 0;
+		int count = 0;
+		return new int[] {score, count};
+	}
+	*/
+	
+	private int computerTurn() {
+		SolvingTree tree = new SolvingTree(-1);
+		int[] tempState;
+		
+		tree = generateChildren(tree, gameState);
+		
+		int index = 0;
+		int best = -10000000;
+		int bestCount = 100;
+		for (SolvingTree st : tree.children) {
+			tempState = gameState.clone();
+			tempState[st.index] = 2;
+			generateChildren(st, tempState);
+			int score = evaluate(2, st.index, tempState);
+			int bestSub = -100;
+			int count = 1;
+			// calculate turn 1 score
+			for (SolvingTree sst : st.children) {
+				int[] subState = tempState.clone();
+				subState[sst.index] = 1;
+				int subscore = evaluate(1, sst.index, subState);
+				if (subscore > bestSub) {
+					count = 1;
+					bestSub = subscore;
+				} else if (subscore == bestSub) {
+					count++;
+				}
+			}
+			score -= bestSub;
+			if (score > best || (score == best && count < bestCount)) {
+				best = score;
+				bestCount = count;
+				index = st.index;
+			}
+		}
+		
+		gameState[index] = 2;
+		turn++;
+		return index;
 	}
 	
 	private void reset() {
